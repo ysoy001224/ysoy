@@ -1,19 +1,20 @@
 const { chromium } = require('playwright');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const fs = require('fs');
 const path = require('path');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// ─── 환경변수 ───────────────────────────────────────────────
+// ─── 환경변수 설정 ───────────────────────────────────────────────
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const KAKAO_ACCESS_TOKEN = process.env.KAKAO_ACCESS_TOKEN;
 const KAKAO_REFRESH_TOKEN = process.env.KAKAO_REFRESH_TOKEN;
 const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID;
 const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET;
 
-// ─── 제미나이 및 상태 파일 설정 ───────────────────────────────
+// Gemini 초기화
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const STATE_FILE = path.join(__dirname, '..', 'sent_today.json'); // 주석과 짝을 맞춰줌
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
 
+const STATE_FILE = path.join(__dirname, '..', 'sent_today.json');
 
 const RESTAURANTS = [
   { id: 'tori',    name: '🍗 토리송 (B1)',  url: 'https://woomi.wiki/tori' },
@@ -53,7 +54,6 @@ async function refreshKakaoToken() {
   const data = await res.json();
   if (data.access_token) {
     console.log('✅ 카카오 토큰 갱신 성공');
-    // GitHub Actions output으로 새 토큰 출력 (Secrets 업데이트용)
     if (process.env.GITHUB_OUTPUT) {
       fs.appendFileSync(process.env.GITHUB_OUTPUT, `new_access_token=${data.access_token}\n`);
       if (data.refresh_token) {
@@ -89,7 +89,6 @@ async function sendKakaoMessage(text, accessToken) {
     return true;
   }
 
-  // 토큰 만료 시 갱신 후 재시도
   if (data.code === -401 && KAKAO_REFRESH_TOKEN) {
     console.log('⚠️  액세스 토큰 만료, 갱신 시도...');
     const newToken = await refreshKakaoToken();
@@ -106,11 +105,9 @@ async function captureMenuImage(browser, url) {
 
   try {
     await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
-    // 메뉴 이미지가 로드될 때까지 대기 (img 태그 기준)
     await page.waitForSelector('img[src*="cloudinary"]', { timeout: 15000 }).catch(() => {});
-    await page.waitForTimeout(2000); // 추가 렌더링 대기
+    await page.waitForTimeout(2000);
 
-    // 메뉴 이미지 영역만 크롭
     const imgEl = await page.$('img[src*="cloudinary"]:not([src*="talk"])');
     if (!imgEl) {
       console.log(`⚠️  ${url} — 메뉴 이미지 없음`);
@@ -124,11 +121,19 @@ async function captureMenuImage(browser, url) {
   }
 }
 
+// ─── Gemini로 메뉴 분석 ────────────────────────────────────
 async function analyzeMenuImage(imageBuffer, restaurantName) {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-  const base64 = imageBuffer.toString('base64');
+  try {
+    const base64 = imageBuffer.toString('base64');
 
-  const prompt = `이것은 "${restaurantName}" 식당의 오늘 점심 메뉴판 이미지입니다.
+    const imagePart = {
+      inlineData: {
+        data: base64,
+        mimeType: "image/jpeg"
+      }
+    };
+
+    const prompt = `이것은 "${restaurantName}" 식당의 오늘 점심 메뉴판 이미지입니다.
 이미지에서 메뉴 항목들을 모두 추출해주세요.
 
 규칙:
@@ -137,17 +142,13 @@ async function analyzeMenuImage(imageBuffer, restaurantName) {
 3. 가격이 있으면 포함, 없으면 생략
 4. 다른 설명 없이 메뉴 목록만 출력`;
 
-  const result = await model.generateContent([
-    {
-      inlineData: {
-        data: base64,
-        mimeType: "image/jpeg"
-      }
-    },
-    prompt
-  ]);
-
-  return result.response.text().trim();
+    const result = await model.generateContent([prompt, imagePart]);
+    const response = await result.response;
+    return response.text().trim();
+  } catch (error) {
+    console.error("Gemini 분석 중 오류:", error.message);
+    throw error;
+  }
 }
 
 // ─── 메뉴 판단 로직 ───────────────────────────────
@@ -194,10 +195,9 @@ async function main() {
     if (!allReady) {
       const notReady = results.filter(r => !r.ready).map(r => r.name).join(', ');
       console.log(`\n⏳ 아직 메뉴 미업로드: ${notReady} — 재시도 대기`);
-      return; // GitHub Actions가 5분 후 다시 실행
+      return;
     }
 
-    // 모두 올라왔으면 카카오톡 전송
     const today = new Date().toLocaleDateString('ko-KR', {
       month: 'long', day: 'numeric', weekday: 'short',
     });
