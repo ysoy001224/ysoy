@@ -121,47 +121,49 @@ async function captureMenuImage(browser, url) {
   }
 }
 
-// ─── Claude Vision으로 메뉴 분석 ────────────────────────────
+// ─── Google Generative AI로 메뉴 분석 ────────────────────────────
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+// Gemini 클라이언트 초기화 (환경변수 GEMINI_API_KEY가 필요합니다)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 async function analyzeMenuImage(imageBuffer, restaurantName) {
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+  // Gemini 1.5 Flash 모델 사용 (빠르고 저렴하며 효율적입니다)
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const base64 = imageBuffer.toString('base64');
 
-  const response = await client.messages.create({
-    model: 'claude-opus-4-5-20251101',
-    max_tokens: 1024,
-    messages: [{
-      role: 'user',
-      content: [
-        {
-          type: 'image',
-          source: { type: 'base64', media_type: 'image/jpeg', data: base64 },
-        },
-        {
-          type: 'text',
-          text: `이것은 "${restaurantName}" 식당의 오늘 점심 메뉴판 이미지입니다.
+  const prompt = `이것은 "${restaurantName}" 식당의 오늘 점심 메뉴판 이미지입니다.
 이미지에서 메뉴 항목들을 모두 추출해주세요.
 
 규칙:
 1. 메뉴 항목만 리스트로 출력 (번호나 불릿 없이, 줄바꿈으로 구분)
 2. 메뉴가 없거나 이미지가 불명확하면 "메뉴 준비중"이라고만 답변
 3. 가격이 있으면 포함, 없으면 생략
-4. 다른 설명 없이 메뉴 목록만 출력`,
-        },
-      ],
-    }],
-  });
+4. 다른 설명 없이 메뉴 목록만 출력`;
 
-  return response.content[0].text.trim();
+  const result = await model.generateContent([
+    {
+      inlineData: {
+        data: base64,
+        mimeType: "image/png" // 필요에 따라 image/jpeg 등으로 변경
+      }
+    },
+    prompt
+  ]);
+
+  const response = await result.response;
+  return response.text().trim();
 }
 
-// ─── 메뉴가 실제로 있는지 판단 ───────────────────────────────
+// ─── 메뉴 판단 로직 ───────────────────────────────
 function hasValidMenu(menuText) {
   if (!menuText) return false;
   const lower = menuText.toLowerCase();
   return !lower.includes('준비중') && !lower.includes('준비 중') &&
          !lower.includes('없음') && menuText.length > 5;
 }
+
 
 // ─── 메인 ────────────────────────────────────────────────────
 async function main() {
