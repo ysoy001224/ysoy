@@ -1,0 +1,5 @@
+node_modules/
+sent_today.json
+*.env
+.env*
+screenshots/

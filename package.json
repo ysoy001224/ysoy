@@ -1,0 +1,17 @@
+{
+  "name": "woomi-lunch-bot",
+  "version": "1.0.0",
+  "description": "우미위키 점심 메뉴 카카오톡 알림 봇",
+  "main": "src/bot.js",
+  "scripts": {
+    "start": "node src/bot.js",
+    "install:browsers": "npx playwright install chromium --with-deps"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.0",
+    "playwright": "^1.44.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,76 @@
+name: 🍱 우미위키 점심 메뉴 알림
+
+on:
+  schedule:
+    # 평일 오전 11시 ~ 오후 1시, 5분마다 실행 (UTC 기준 = KST -9시간)
+    # KST 11:00 = UTC 02:00 / KST 13:00 = UTC 04:00
+    - cron: '0,5,10,15,20,25,30,35,40,45,50,55 2,3 * * 1-5'
+    - cron: '0,5,10,15,20,25,30,35,40,45,50,55 4 * * 1-5'
+
+  # 수동 실행 (테스트용)
+  workflow_dispatch:
+
+jobs:
+  check-and-notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 🟢 Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 의존성 설치
+        run: npm ci
+
+      - name: 🎭 Playwright 브라우저 설치
+        run: npx playwright install chromium --with-deps
+
+      # 오늘 전송 상태 복원 (Actions cache 활용)
+      - name: 💾 전송 상태 캐시 복원
+        uses: actions/cache@v4
+        with:
+          path: sent_today.json
+          key: sent-today-${{ github.run_id }}
+          restore-keys: |
+            sent-today-
+
+      - name: 🤖 봇 실행
+        id: run_bot
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          KAKAO_ACCESS_TOKEN: ${{ secrets.KAKAO_ACCESS_TOKEN }}
+          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
+          KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+        run: node src/bot.js
+
+      # 카카오 토큰이 갱신됐으면 Secrets 자동 업데이트
+      - name: 🔑 카카오 액세스 토큰 업데이트
+        if: steps.run_bot.outputs.new_access_token != ''
+        uses: gliech/create-github-secret-action@v1
+        with:
+          name: KAKAO_ACCESS_TOKEN
+          value: ${{ steps.run_bot.outputs.new_access_token }}
+          pa_token: ${{ secrets.GH_PAT }}
+
+      - name: 🔑 카카오 리프레시 토큰 업데이트
+        if: steps.run_bot.outputs.new_refresh_token != ''
+        uses: gliech/create-github-secret-action@v1
+        with:
+          name: KAKAO_REFRESH_TOKEN
+          value: ${{ steps.run_bot.outputs.new_refresh_token }}
+          pa_token: ${{ secrets.GH_PAT }}
+
+      # 전송 상태 저장
+      - name: 💾 전송 상태 캐시 저장
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: sent_today.json
+          key: sent-today-${{ github.run_id }}
