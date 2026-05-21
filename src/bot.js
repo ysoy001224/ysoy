@@ -1,10 +1,10 @@
 const { chromium } = require('playwright');
-const Anthropic = require('@anthropic-ai/sdk');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fs = require('fs');
 const path = require('path');
 
 // ─── 환경변수 ───────────────────────────────────────────────
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const KAKAO_ACCESS_TOKEN = process.env.KAKAO_ACCESS_TOKEN;
 const KAKAO_REFRESH_TOKEN = process.env.KAKAO_REFRESH_TOKEN;
 const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID;
@@ -163,7 +163,6 @@ function hasValidMenu(menuText) {
   return !lower.includes('준비중') && !lower.includes('준비 중') &&
          !lower.includes('없음') && menuText.length > 5;
 }
-
 
 // ─── 메인 ────────────────────────────────────────────────────
 async function main() {
