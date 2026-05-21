@@ -123,8 +123,6 @@ async function captureMenuImage(browser, url) {
 }
 
 async function analyzeMenuImage(imageBuffer, restaurantName) {
-  // Gemini 1.5 Flash 모델 사용 (빠르고 저렴하며 효율적입니다)
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const base64 = imageBuffer.toString('base64');
 
