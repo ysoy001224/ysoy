@@ -124,9 +124,6 @@ async function captureMenuImage(browser, url) {
 // ─── Google Generative AI로 메뉴 분석 ────────────────────────────
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Gemini 클라이언트 초기화 (환경변수 GEMINI_API_KEY가 필요합니다)
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 async function analyzeMenuImage(imageBuffer, restaurantName) {
   // Gemini 1.5 Flash 모델 사용 (빠르고 저렴하며 효율적입니다)
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
