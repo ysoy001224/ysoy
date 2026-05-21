@@ -125,7 +125,7 @@ async function captureMenuImage(browser, url) {
 }
 
 async function analyzeMenuImage(imageBuffer, restaurantName) {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
   const base64 = imageBuffer.toString('base64');
 
   const prompt = `이것은 "${restaurantName}" 식당의 오늘 점심 메뉴판 이미지입니다.
