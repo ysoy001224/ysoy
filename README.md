@@ -28,7 +28,7 @@ jobs:
 
       - name: 🤖 봇 실행
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           KAKAO_ACCESS_TOKEN: ${{ secrets.KAKAO_ACCESS_TOKEN }}
           KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
           KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
