@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fs = require('fs');
 const path = require('path');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // ─── 환경변수 ───────────────────────────────────────────────
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -10,6 +10,7 @@ const KAKAO_REFRESH_TOKEN = process.env.KAKAO_REFRESH_TOKEN;
 const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID;
 const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET;
 // 한 번 보낸 날은 다시 보내지 않기 위한 상태 파일
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const STATE_FILE = path.join(__dirname, '..', 'sent_today.json');
 
 const RESTAURANTS = [
