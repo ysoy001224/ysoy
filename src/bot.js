@@ -9,9 +9,11 @@ const KAKAO_ACCESS_TOKEN = process.env.KAKAO_ACCESS_TOKEN;
 const KAKAO_REFRESH_TOKEN = process.env.KAKAO_REFRESH_TOKEN;
 const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID;
 const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET;
-// 한 번 보낸 날은 다시 보내지 않기 위한 상태 파일
+
+// ─── 제미나이 및 상태 파일 설정 ───────────────────────────────
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const STATE_FILE = path.join(__dirname, '..', 'sent_today.json');
+const STATE_FILE = path.join(__dirname, '..', 'sent_today.json'); // 주석과 짝을 맞춰줌
+
 
 const RESTAURANTS = [
   { id: 'tori',    name: '🍗 토리송 (B1)',  url: 'https://woomi.wiki/tori' },
