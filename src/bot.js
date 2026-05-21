@@ -128,7 +128,7 @@ async function analyzeMenuImage(imageBuffer, restaurantName) {
   const base64 = imageBuffer.toString('base64');
 
   const response = await client.messages.create({
-    model: 'model: 'claude-opus-4-5-20251101',
+    model: 'claude-opus-4-5-20251101',
     max_tokens: 1024,
     messages: [{
       role: 'user',
