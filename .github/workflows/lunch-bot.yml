@@ -2,12 +2,8 @@ name: 🍱 우미위키 점심 메뉴 알림
 
 on:
   schedule:
-    # 평일 오전 11시 ~ 오후 1시, 5분마다 실행 (UTC 기준 = KST -9시간)
-    # KST 11:00 = UTC 02:00 / KST 13:00 = UTC 04:00
     - cron: '0,5,10,15,20,25,30,35,40,45,50,55 2,3 * * 1-5'
     - cron: '0,5,10,15,20,25,30,35,40,45,50,55 4 * * 1-5'
-
-  # 수동 실행 (테스트용)
   workflow_dispatch:
 
 jobs:
@@ -23,15 +19,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: 📦 의존성 설치
-        run: npm ci
+        run: npm install
 
       - name: 🎭 Playwright 브라우저 설치
         run: npx playwright install chromium --with-deps
 
-      # 오늘 전송 상태 복원 (Actions cache 활용)
       - name: 💾 전송 상태 캐시 복원
         uses: actions/cache@v4
         with:
@@ -50,7 +44,6 @@ jobs:
           KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
         run: node src/bot.js
 
-      # 카카오 토큰이 갱신됐으면 Secrets 자동 업데이트
       - name: 🔑 카카오 액세스 토큰 업데이트
         if: steps.run_bot.outputs.new_access_token != ''
         uses: gliech/create-github-secret-action@v1
@@ -67,7 +60,6 @@ jobs:
           value: ${{ steps.run_bot.outputs.new_refresh_token }}
           pa_token: ${{ secrets.GH_PAT }}
 
-      # 전송 상태 저장
       - name: 💾 전송 상태 캐시 저장
         if: always()
         uses: actions/cache/save@v4
