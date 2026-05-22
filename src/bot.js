@@ -6,7 +6,7 @@ const path = require('path');
 // ─── 환경변수 설정 ───────────────────────────────────────────────
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY;
-const CHANNEL_ID = 'gm_PqPbX'; // 채널 ID
+const CHANNEL_ID = '_PqPbX'; // 채널 ID
 
 const STATE_FILE = path.join(__dirname, '..', 'sent_today.json');
 
